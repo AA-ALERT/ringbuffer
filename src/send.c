@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+
 #define PACKHEADER 114                   // Size of the packet header = PACKETSIZE-PAYLOADSIZE in bytes
 
 #define PACKETSIZE_STOKESI  6364         // Size of the packet, including the header in bytes
@@ -24,7 +25,8 @@
 
 #define MMSG_VLEN  256            // Batch message into single syscal using recvmmsg()
 
-#define UMSPPACKET (1.0)
+#define TIMEUNIT 781250           // Conversion factor of timestamp from seconds to (1.28 us) packets
+#define UMSPPACKET (1.0)          // sleep time in microseconds between sending two packets
 
 /*
  * Header description based on:
@@ -105,7 +107,7 @@ int main(int argc , char *argv[]) {
 
   packet_t *packet;                // Pointer to current packet
   int counter = 0;
-  unsigned long curr_time;          // Current timestamp
+  unsigned long curr_packet;       // Current timestamp
   unsigned long dropped = 0;       // deliberately dropped packets
   while(1) {
     for(packet_idx=0; packet_idx < MMSG_VLEN; packet_idx++) {
@@ -120,8 +122,8 @@ int main(int argc , char *argv[]) {
       packet->tab_index = (counter / 4) % 12;
       packet->channel_index = bswap_16((counter / (4 * 12)) % 1536);
 
-      curr_time = counter / (4 * 12 * 1536);
-      packet->timestamp = bswap_64(curr_time);
+      curr_packet = TIMEUNIT * (counter / (4 * 12 * 1536));
+      packet->timestamp = bswap_64(curr_packet);
 
       //if (counter % 12345 == 0) {
       //  // deliberately drop some packets
